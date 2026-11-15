@@ -47,3 +47,10 @@ next-env.d.ts
 
 # Local temp files
 temp/
+
+# Local capture tools and original media (web assets live in public/sites/)
+.playwright-mcp/
+.tokensave/
+/Video Project 4.mp4
+/portfolio_websites/
+/logo.png
