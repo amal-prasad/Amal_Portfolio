@@ -150,7 +150,7 @@ export function Portfolio() {
             <div className="line" />
             <div className="margin-top margin-medium">
               <div data-reveal-group="" className="_2-col is-3-9">
-                <h6><O>A bit about me</O></h6>
+                <h6>A bit <span className="heading-word"><O>about</O></span> me</h6>
                 <p className="text-2-col">{profile.about}</p>
               </div>
             </div>

@@ -323,7 +323,7 @@ export async function initGlassCarousel(root: HTMLElement, cancelled: AbortSigna
       entered = true;
       userInteracted = true;
       velocity = 0;
-      target = centerForIndex(nearestIndex(scroll) + 1);
+      target = centerForIndex(nearestIndex(scroll));
       snapped = true;
     },
     onLeaveBack() { entered = false; },
