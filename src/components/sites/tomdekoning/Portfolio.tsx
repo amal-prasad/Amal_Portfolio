@@ -12,16 +12,16 @@ const profile = {
   phone: "+91 79997 87808",
   phoneHref: "tel:+917999787808",
   email: "amalprasad1998@gmail.com",
-  tagline: "I design websites that feel as good to use as they look.",
+  tagline: "I build tech solutions that make business simpler.",
   stats: [
-    ["What I do", "Web design &\nwebsite builds"],
+    ["What I do", "Tech solutions &\nweb design"],
     ["Experience", "5 years and counting"],
     ["Timezone", "GMT+5:30"],
     ["Availability", "Open for freelance"],
     ["Currently with", "AGP Enterprises"],
   ],
   about:
-    "Hey, I’m Amal. I’ve spent the last five years designing websites, the kind people actually enjoy scrolling through. Right now I freelance with AGP Enterprises, a design agency, helping brands look sharp and feel effortless online. I sweat the small stuff: how a page moves, how text reads, how quickly it loads. If your site needs some love, I’d be glad to help.",
+    "Hey, I’m Amal. I help businesses turn everyday challenges into practical tech solutions. Web design is a big part of that: I’ve spent the last five years creating websites people actually enjoy using. Right now I freelance with AGP Enterprises, a design agency, helping brands look sharp and feel effortless online. I care about the details and the bigger picture: what you need, how it works, and how it helps your business. Got a problem technology could help solve? Let’s talk.",
   work: [
     { title: "AGP Enterprises", kind: "Identity / website", file: "agp-enterprises" },
     { title: "RS Jewellers", kind: "Website", file: "rs-jewellers" },
@@ -57,7 +57,7 @@ export function Portfolio() {
         </div>
         <div className="loader__meta">
           <div className="loader__mask"><h6 data-loader-out=""><O>{profile.name}</O></h6></div>
-          <div className="loader__mask"><h6 data-loader-out="" className="loader__dim"><O>Web designer</O></h6></div>
+          <div className="loader__mask"><h6 data-loader-out="" className="loader__dim"><O>Tech solutions</O></h6></div>
         </div>
         <div className="loader__count loader__mask">
           <div data-loader-out=""><span data-loader-count="">0</span><small>%</small></div>

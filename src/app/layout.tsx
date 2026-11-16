@@ -11,8 +11,8 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Amal Prasad, web designer",
-  description: "Amal Prasad, freelance web designer working with AGP Enterprises. Websites that feel as good to use as they look.",
+  title: "Amal Prasad | Tech Solutions & Web Design",
+  description: "Amal Prasad, freelancer working with AGP Enterprises. Practical tech solutions and thoughtful web design to help businesses work better and look sharp online.",
   icons: { icon: "/sites/tomdekoning/logo.png" },
 };
 
