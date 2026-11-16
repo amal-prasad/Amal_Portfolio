@@ -1,0 +1,20 @@
+data-scroll-end="bottom top"
+data-scroll-start="top top"
+<nav id="nav"
+<section id="header"
+<div data-sequence-element="" id="w-node-_1d7edd9a-c0a2-fdac-6869-db989cef2c6d-63c7f6b9"
+<div id="info"
+<section id="about"
+<section id="work"
+<section id="contact"
+#w-node-_1d7edd9a-c0a2-fdac-6869-db989cef2c6d-63c7f6b9 {
+  grid-area: 1 / 2 / 2 / 3;
+}
+
+
+<h2 data-gradient-wave-text="" class="heading-2">I build brands that turn heads — online and beyond
+Services</h6><h6 class="text-align-right">Strategy, (digital) design &amp; 
+availability</h6><h6>Taking on projects from Q4
+<a href="#" class="nav-button w-inline-block">
+<a href="#" class="nav-button is-menu w-inline-block">
+<nav id="nav" class="navbar">

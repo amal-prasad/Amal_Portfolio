@@ -80,7 +80,7 @@ export async function initGlassCarousel(root: HTMLElement, cancelled: AbortSigna
   } catch {
     return; // ponytail: no WebGL → the plain scrollable video list stays visible
   }
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
   renderer.setSize(W, H, false);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.setClearColor(0x000000, 0);
@@ -236,7 +236,13 @@ export async function initGlassCarousel(root: HTMLElement, cancelled: AbortSigna
   let dragging = false, dragPointerId: number | null = null, dragLastX = 0, dragDist = 0;
   let dragVel = 0, dragMoveT = 0, suppressClick = false, dragPointerType = "mouse";
   let lastPointerX = NaN, lastPointerY = NaN, pointerInside = false;
-  const setHover = (on: boolean) => wrapper.setAttribute("data-glass-carousel-pointer", dragging ? "grabbing" : on ? "grab" : "");
+  let pointerState: string | undefined;
+  const setHover = (on: boolean) => {
+    const next = dragging ? "grabbing" : on ? "grab" : "";
+    if (next === pointerState) return;
+    pointerState = next;
+    wrapper.setAttribute("data-glass-carousel-pointer", next);
+  };
 
   const onPointerUp = (e?: PointerEvent) => {
     if (!dragging || (e && dragPointerId !== null && e.pointerId !== dragPointerId)) return;
@@ -379,10 +385,8 @@ export async function initGlassCarousel(root: HTMLElement, cancelled: AbortSigna
     uniforms.uTime.value = performance.now() * 0.001;
 
     renderer.setRenderTarget(rt);
-    renderer.clear();
     renderer.render(scene, camera);
     renderer.setRenderTarget(null);
-    renderer.clear();
     renderer.render(lensScene, lensCam);
     raf = requestAnimationFrame(tick);
   };
@@ -401,7 +405,7 @@ export async function initGlassCarousel(root: HTMLElement, cancelled: AbortSigna
     if (!nextW || !nextH || (nextW === W && nextH === H)) return;
     W = nextW;
     H = nextH;
-    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
     renderer.setSize(W, H, false);
     camera.left = -W / 2;
     camera.right = W / 2;

@@ -65,6 +65,9 @@ body {
   left: -0.075em;
 }
 
+/* Keep the nested italic O in the same word through character splitting. */
+.heading-word { display: inline-block; white-space: nowrap; }
+
 .padding-global { padding-left: 1.5rem; padding-right: 1.5rem; }
 .padding-global.is-full { padding-top: 1.5rem; padding-bottom: 1.5rem; }
 .padding-xxhuge { padding: 12rem 0; }
@@ -288,3 +291,109 @@ body {
 
 .header-text-wrapper p { max-width: 17.5rem; }
 .stat-value { white-space: pre-line; }
+
+.header-top h6 { color: var(--orange); }
+
+/* Loader: covers the page while the hero frames + fonts load underneath */
+html.is-loading { overflow: hidden; }
+.loader {
+  --p: 0;
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--black);
+  color: var(--sand);
+  clip-path: inset(0% 0% 0% 0%);
+  /* failsafe if JS never runs */
+  animation: loader-failsafe 0.6s 12s forwards;
+}
+@keyframes loader-failsafe { to { opacity: 0; visibility: hidden; } }
+.loader__glow {
+  position: absolute;
+  width: 70vmax;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(243, 66, 19, 0.5) 0%, rgba(243, 66, 19, 0) 62%);
+  filter: blur(40px);
+  opacity: calc(0.15 + var(--p) * 0.6);
+  transform: translateY(calc((1 - var(--p)) * 30%)) scale(calc(0.7 + var(--p) * 0.4));
+  pointer-events: none;
+}
+.loader__logo { position: relative; width: min(46vw, 460px); }
+.loader__logo img { display: block; width: 100%; height: auto; }
+.loader__logo-base { filter: grayscale(1) brightness(0.35); opacity: 0.55; }
+.loader__logo-fill {
+  position: absolute;
+  inset: 0;
+  clip-path: inset(calc((1 - var(--p)) * 100%) 0 0 0);
+}
+.loader__bar { position: absolute; top: 0; left: 0; right: 0; height: 2px; background: rgba(231, 225, 215, 0.08); }
+.loader__bar span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #8a1d05, var(--orange), #ffb38f);
+  transform-origin: left;
+  transform: scaleX(var(--p));
+  box-shadow: 0 0 12px rgba(243, 66, 19, 0.8);
+}
+.loader__mask { overflow: hidden; }
+.loader__top { position: absolute; top: 1.5rem; left: 1.5rem; right: 1.5rem; display: flex; justify-content: space-between; }
+.loader__top h6 { color: var(--orange); }
+.loader__meta { position: absolute; left: 1.5rem; bottom: 1.5rem; display: flex; flex-direction: column; gap: 0.35rem; }
+.loader__dim { opacity: 0.5; }
+.loader__count {
+  position: absolute;
+  right: 1.5rem;
+  bottom: 0.75rem;
+  font-family: Ppneuemontreal, Arial, sans-serif;
+  font-size: clamp(5rem, 16vw, 16rem);
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  color: var(--orange);
+  font-variant-numeric: tabular-nums;
+}
+.loader__count > div { display: flex; align-items: flex-start; }
+.loader__count small { font-size: 0.28em; margin: 0.2em 0 0 0.12em; color: var(--sand); letter-spacing: 0; }
+@media screen and (max-width: 479px) {
+  .loader__logo { width: 72vw; }
+  .loader__top { top: 1rem; left: 1rem; right: 1rem; }
+  .loader__meta { left: 1rem; bottom: calc(1rem + 30vw); }
+  .loader__count { right: 1rem; font-size: 30vw; }
+}
+
+/* Keep page width identical while the loader locks scroll; a width change makes SplitText re-split and replay the headline */
+html { scrollbar-gutter: stable; }
+
+/* Sleek 3D lift: stacked hairline extrusion + soft close glow, no neon bloom */
+.tdk .text-3d {
+  text-shadow:
+    0 1px 0 #b8310d,
+    0 2px 0 #8a2409,
+    0 3px 0 #5e1806,
+    0 6px 10px rgba(0, 0, 0, 0.55),
+    0 0 18px rgba(243, 66, 19, 0.28);
+}
+.tdk .hero-name {
+  text-shadow:
+    0 1px 0 #cfc7ba,
+    0 2px 0 #b3aa9b,
+    0 3px 0 #958c7e,
+    0 4px 0 #776f63,
+    0 10px 18px rgba(0, 0, 0, 0.6),
+    0 0 40px rgba(243, 66, 19, 0.18);
+}
+.tdk .hero-name .text-color-orange {
+  text-shadow:
+    0 1px 0 #c9360f,
+    0 2px 0 #a12b0b,
+    0 3px 0 #7a2008,
+    0 4px 0 #561605,
+    0 10px 18px rgba(0, 0, 0, 0.6),
+    0 0 36px rgba(243, 66, 19, 0.35);
+}
+/* SplitText line masks clip overflow; give the extrusion room */
+.tdk .hero-name .stagger-line-mask { padding-bottom: 0.08em; margin-bottom: -0.08em; }
+.contact-email { text-transform: none; }

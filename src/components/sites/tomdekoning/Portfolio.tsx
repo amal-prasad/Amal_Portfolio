@@ -9,16 +9,19 @@ const ASSETS = "/sites/tomdekoning";
 const profile = {
   name: "Amal Prasad",
   company: "AGP Enterprises",
-  tagline: "I blend marketing, design and tech to build brands people remember.",
+  phone: "+91 79997 87808",
+  phoneHref: "tel:+917999787808",
+  email: "amalprasad1998@gmail.com",
+  tagline: "I design websites that feel as good to use as they look.",
   stats: [
-    ["Services", "Marketing, design &\ntech solutions"],
-    ["Experience", "5 years"],
+    ["What I do", "Web design &\nwebsite builds"],
+    ["Experience", "5 years and counting"],
     ["Timezone", "GMT+5:30"],
-    ["Availability", "Freelance"],
-    ["Role", "Entrepreneur"],
+    ["Availability", "Open for freelance"],
+    ["Currently with", "AGP Enterprises"],
   ],
   about:
-    "I’m Amal Prasad, a freelance entrepreneur representing AGP Enterprises. For 5 years I’ve brought marketing, design and tech solutions together to build brands that stand out and stay consistent wherever they show up. From the idea behind the brand to the identity, website and everything around it. One vision. The right people. A brand that works as one.",
+    "Hey, I’m Amal. I’ve spent the last five years designing websites, the kind people actually enjoy scrolling through. Right now I freelance with AGP Enterprises, a design agency, helping brands look sharp and feel effortless online. I sweat the small stuff: how a page moves, how text reads, how quickly it loads. If your site needs some love, I’d be glad to help.",
   work: [
     { title: "AGP Enterprises", kind: "Identity / website", file: "agp-enterprises" },
     { title: "RS Jewellers", kind: "Website", file: "rs-jewellers" },
@@ -39,6 +42,28 @@ export function Portfolio() {
 
   return (
     <div ref={root} className="tdk">
+      <div className="loader" aria-hidden="true">
+        <div className="loader__bar"><span /></div>
+        <div className="loader__top">
+          <div className="loader__mask"><h6 data-loader-out=""><O>{profile.company}</O></h6></div>
+          <div className="loader__mask"><h6 data-loader-out=""><O>Portfolio 2026</O></h6></div>
+        </div>
+        <div className="loader__glow" />
+        <div className="loader__logo">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="loader__logo-base" src={`${ASSETS}/logo.png`} alt="" width={269} height={92} />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="loader__logo-fill" src={`${ASSETS}/logo.png`} alt="" width={269} height={92} />
+        </div>
+        <div className="loader__meta">
+          <div className="loader__mask"><h6 data-loader-out=""><O>{profile.name}</O></h6></div>
+          <div className="loader__mask"><h6 data-loader-out="" className="loader__dim"><O>Web designer</O></h6></div>
+        </div>
+        <div className="loader__count loader__mask">
+          <div data-loader-out=""><span data-loader-count="">0</span><small>%</small></div>
+        </div>
+      </div>
+
       <div className="page-wrapper">
         <section id="header" className="padding-global">
           <div data-sequence-wrap="" className="image-sequence__wrap">
@@ -61,8 +86,8 @@ export function Portfolio() {
 
           <div className="section__header">
             <div data-reveal-group="" className="header-top">
-              <h6 className="text-color-orange"><O>{profile.company}</O></h6>
-              <h6 className="text-color-orange"><O>portfolio 2026</O></h6>
+              <h6 className="text-color-orange text-3d"><O>{profile.company}</O></h6>
+              <h6 className="text-color-orange text-3d"><O>portfolio 2026</O></h6>
             </div>
             <div className="header-bottom">
               <div data-reveal-group="" className="header-intro__wrap">
@@ -77,7 +102,7 @@ export function Portfolio() {
                 </div>
               </div>
               <div className="line" />
-              <h1 data-stagger-char-delay="0.75" data-scroll-speed="0.1" data-stagger-char="line" className="text-align-right">
+              <h1 data-stagger-char-delay="0.75" data-scroll-speed="0.1" data-stagger-char="line" className="text-align-right hero-name">
                 <O>{profile.name}</O>
                 <br />
                 <span className="text-color-orange">.AGP</span>
@@ -120,12 +145,12 @@ export function Portfolio() {
         <section id="about" className="padding-global">
           <div className="padding-vertical padding-xxhuge">
             <div className="margin-bottom margin-large">
-              <h2 data-gradient-wave-text="" className="heading-2"><O>I build brands that turn heads — online and beyond</O></h2>
+              <h2 data-gradient-wave-text="" className="heading-2"><O>I design websites </O><span className="heading-word"><O>people</O></span><O> actually remember</O></h2>
             </div>
             <div className="line" />
             <div className="margin-top margin-medium">
               <div data-reveal-group="" className="_2-col is-3-9">
-                <h6><O>Because</O></h6>
+                <h6><O>A bit about me</O></h6>
                 <p className="text-2-col">{profile.about}</p>
               </div>
             </div>
@@ -135,7 +160,7 @@ export function Portfolio() {
         <section>
           <div className="padding-global">
             <div className="margin-top margin-huge work-intro">
-              <h6><O>What you’re here for (I guess)</O></h6>
+              <h6><O>The fun part</O></h6>
               <h2 data-stagger-char="" className="heading-extreme">Work</h2>
             </div>
           </div>
@@ -150,7 +175,7 @@ export function Portfolio() {
                   <video
                     src={`${ASSETS}/work/${item.file}.mp4`}
                     poster={`${ASSETS}/work/${item.file}.jpg`}
-                    preload="auto"
+                    preload="none"
                     muted
                     loop
                     playsInline
@@ -181,22 +206,22 @@ export function Portfolio() {
                     <div data-reveal-group="" className="flex-horizontal space-between is-stretch">
                       <div className="flex-vertical gap-s">
                         <div className="flex-vertical">
-                          <h6><O>Name</O></h6>
-                          <span className="heading-style-h6">{profile.name}</span>
+                          <h6><O>Call or WhatsApp</O></h6>
+                          <a data-link-stagger="" href={profile.phoneHref} className="heading-style-h6">{profile.phone}</a>
                         </div>
                         <div className="flex-vertical">
-                          <h6><O>Company</O></h6>
-                          <span className="heading-style-h6">{profile.company}</span>
+                          <h6><O>Say hello</O></h6>
+                          <a data-link-stagger="" href={`mailto:${profile.email}`} className="heading-style-h6 contact-email">{profile.email}</a>
                         </div>
                       </div>
                       <div className="flex-vertical gap-s">
                         <div className="flex-vertical">
                           <h6 className="text-align-right"><O>Availability</O></h6>
-                          <span className="heading-style-h6 text-align-right">Freelance</span>
+                          <span className="heading-style-h6 text-align-right">Open for freelance</span>
                         </div>
                         <div className="flex-vertical">
-                          <h6 className="text-align-right"><O>Timezone</O></h6>
-                          <span className="heading-style-h6 text-align-right">GMT+5:30</span>
+                          <h6 className="text-align-right"><O>Based in</O></h6>
+                          <span className="heading-style-h6 text-align-right">India, GMT+5:30</span>
                         </div>
                       </div>
                     </div>

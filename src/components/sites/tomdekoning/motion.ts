@@ -27,15 +27,36 @@ export function initMotion(root: HTMLElement): () => void {
     refreshTimer = window.setTimeout(() => ScrollTrigger.refresh(), 100);
   };
 
+  /* Hero frames are fetched up front and decoded; the loader waits on them. */
+  const seqEl = $(".image-sequence__element");
+  const seqData: DOMStringMap = $("[data-sequence-canvas]")?.dataset ?? ({} as DOMStringMap);
+  const seqFrames = Math.floor(num(seqData.frames, 0, 0)), seqFirst = Math.floor(num(seqData.indexStart, 0, 0));
+  const seqDigits = Math.floor(num(seqData.digits, 3, 1));
+  const frameCache = new Map<number, HTMLImageElement>();
+  let framesSettled = 0;
+  let onFrame = () => {};
+  for (let k = 0; k < seqFrames; k++) {
+    const index = seqFirst + k, img = new Image();
+    const settle = () => { framesSettled++; };
+    img.onload = () => {
+      img.decode().catch(() => {}).then(() => {
+        settle();
+        if (signal.aborted) return;
+        frameCache.set(index, img);
+        onFrame();
+      });
+    };
+    img.onerror = settle;
+    img.src = `${seqData.src ?? ""}${String(index).padStart(seqDigits, "0")}.${seqData.filetype ?? "jpg"}`;
+  }
+
+  let loading = true;
+  let lenis: Lenis | undefined;
+
   const ctx = gsap.context(() => {
-    /* Page loader */
-    const header = $("#header"), seqEl = $(".image-sequence__element");
-    gsap.set(header, { visibility: "visible" });
-    if (!reduce) {
-      gsap.set(seqEl, { clipPath: "inset(100% 0% 0% 0%)" });
-      gsap.timeline({ onComplete: scheduleRefresh })
-        .to(seqEl, { clipPath: "inset(0% 0% 0% 0%)", duration: 1.6, ease: "expo.inOut" }, 0);
-    }
+    gsap.set($("#header"), { visibility: "visible" });
+    if (!reduce) gsap.set(seqEl, { clipPath: "inset(100% 0% 0% 0%)" });
+    runLoader();
 
     /* Live clock */
     const clocks = $$("[data-timezone]");
@@ -60,12 +81,14 @@ export function initMotion(root: HTMLElement): () => void {
     }
 
     /* Smooth scroll (source: Locomotive Scroll v5, which is Lenis underneath) */
-    const lenis = new Lenis({ anchors: true });
-    lenis.on("scroll", ScrollTrigger.update);
-    const raf = (time: number) => lenis.raf(time * 1000);
+    const smooth = new Lenis({ anchors: true });
+    lenis = smooth;
+    if (loading) smooth.stop();
+    smooth.on("scroll", ScrollTrigger.update);
+    const raf = (time: number) => smooth.raf(time * 1000);
     gsap.ticker.add(raf);
     gsap.ticker.lagSmoothing(0);
-    cleanups.push(() => { gsap.ticker.remove(raf); lenis.destroy(); });
+    cleanups.push(() => { gsap.ticker.remove(raf); smooth.destroy(); lenis = undefined; });
 
     /* data-scroll-speed parallax */
     $$("[data-scroll-speed]").forEach(el => {
@@ -85,9 +108,70 @@ export function initMotion(root: HTMLElement): () => void {
     initStaggerLinks();
     initCursor();
     initSequence();
-    initSplitText();
-    initReveals();
   }, root);
+
+  /* Loader: counter follows real frame/font progress (min 1.6s so it never flashes), then wipes up */
+  function runLoader() {
+    const loader = $(".loader");
+    if (!loader) { loading = false; intro(); return; }
+    const html = document.documentElement;
+    if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+    scrollTo(0, 0);
+    html.classList.add("is-loading");
+    const countEl = loader.querySelector<HTMLElement>("[data-loader-count]");
+    let fontsDone = !document.fonts;
+    document.fonts?.ready.then(() => { fontsDone = true; });
+    const started = performance.now(), minDuration = reduce ? 0 : 1600, maxWait = 10000;
+    let shown = 0;
+
+    const finish = () => {
+      loading = false;
+      html.classList.remove("is-loading");
+      gsap.set(loader, { display: "none" });
+      lenis?.start();
+      scheduleRefresh();
+    };
+    const exit = () => ctx.add(() => {
+      if (reduce) {
+        intro();
+        gsap.to(loader, { autoAlpha: 0, duration: 0.3, onComplete: finish });
+        return;
+      }
+      gsap.timeline({ onComplete: finish })
+        .to(loader.querySelectorAll("[data-loader-out]"), { yPercent: -110, duration: 0.7, ease: "power3.in", stagger: 0.04 }, 0)
+        .to(loader.querySelector(".loader__logo"), { scale: 1.15, autoAlpha: 0, duration: 0.9, ease: "power3.in" }, 0)
+        .to(loader.querySelector(".loader__glow"), { scale: 1.6, autoAlpha: 0, duration: 1.1, ease: "power2.in" }, 0)
+        .add(() => ctx.add(intro), 0.45)
+        .to(loader, { clipPath: "inset(0% 0% 100% 0%)", duration: 1.2, ease: "expo.inOut" }, 0.45);
+    });
+    const tick = () => {
+      const elapsed = performance.now() - started;
+      const real = (seqFrames ? framesSettled / seqFrames : 1) * 0.9 + (fontsDone ? 0.1 : 0);
+      const target = elapsed > maxWait ? 1 : Math.min(real, minDuration ? elapsed / minDuration : 1);
+      shown += (target - shown) * 0.12;
+      if (target >= 1 && shown > 0.995) shown = 1;
+      loader.style.setProperty("--p", shown.toFixed(4));
+      if (countEl) countEl.textContent = String(Math.floor(shown * 100));
+      if (shown < 1) return;
+      gsap.ticker.remove(tick);
+      exit();
+    };
+    gsap.ticker.add(tick);
+    cleanups.push(() => { gsap.ticker.remove(tick); html.classList.remove("is-loading"); });
+  }
+
+  /* Plays as the loader lifts: hero frame wipes in, text staggers, then work reels start fetching */
+  function intro() {
+    if (!reduce) {
+      gsap.to(seqEl, { clipPath: "inset(0% 0% 0% 0%)", duration: 1.6, ease: "expo.inOut", onComplete: scheduleRefresh });
+      initSplitText();
+      initReveals();
+    }
+    $$<HTMLVideoElement>("[data-glass-carousel-item] video").forEach(video => {
+      video.preload = "auto";
+      video.load();
+    });
+  }
 
   /* Menu button */
   function initMenu() {
@@ -356,16 +440,21 @@ export function initMotion(root: HTMLElement): () => void {
       const canvas = element?.querySelector<HTMLCanvasElement>("[data-sequence-canvas]");
       const c2d = canvas?.getContext("2d");
       if (!element || !canvas || !c2d) return;
-      const frames = Math.floor(num(canvas.dataset.frames, 1, 1));
-      const digits = Math.floor(num(canvas.dataset.digits, 3, 1));
-      const first = Math.floor(num(canvas.dataset.indexStart, 0, 0)), last = first + frames - 1;
-      const base = canvas.dataset.src ?? "", filetype = canvas.dataset.filetype ?? "jpg";
-      const loaded = new Map<number, HTMLImageElement>();
+      const frames = Math.max(1, seqFrames), first = seqFirst, loaded = frameCache;
       let progress = 0, frame = 0, disposed = false, drawn: HTMLImageElement | null = null;
+      let width = element.clientWidth, height = element.clientHeight;
+      let drawnWidth = 0, drawnHeight = 0;
+      let bufferDirty = true;
 
-      const resize = () => {
+      const resizeBuffer = () => {
+        if (!bufferDirty) return false;
+        bufferDirty = false;
         const dpr = Math.min(devicePixelRatio || 1, 2);
-        const w = Math.max(1, Math.round(element.clientWidth * dpr)), h = Math.max(1, Math.round(element.clientHeight * dpr));
+        const mobile = matchMedia("(max-width: 767px)").matches;
+        // Allocate for the largest size in the existing animation. Scrolling
+        // changes the crop, without reallocating a canvas surface every frame.
+        const w = Math.max(1, Math.ceil(innerWidth * (mobile ? 0.9 : 0.35) * dpr));
+        const h = Math.max(1, Math.ceil(innerHeight * (mobile ? 0.7 : 1) * dpr));
         if (canvas.width === w && canvas.height === h) return false;
         canvas.width = w;
         canvas.height = h;
@@ -374,53 +463,51 @@ export function initMotion(root: HTMLElement): () => void {
       const render = () => {
         frame = 0;
         if (disposed) return;
-        const changed = resize();
+        const changed = resizeBuffer();
+        const dpr = Math.min(devicePixelRatio || 1, 2);
+        const displayWidth = Math.max(1, Math.round(width * dpr));
+        const displayHeight = Math.max(1, Math.round(height * dpr));
         const index = first + Math.round(progress * (frames - 1));
-        let image: HTMLImageElement | null = null, nearest = Infinity;
-        loaded.forEach((candidate, key) => {
-          const distance = Math.abs(index - key);
-          if (distance < nearest) { nearest = distance; image = candidate; }
-        });
-        const img = image as HTMLImageElement | null;
-        if (!img || (!changed && img === drawn) || !img.naturalWidth) return;
-        const scale = Math.max(canvas.width / img.naturalWidth, canvas.height / img.naturalHeight);
-        const w = img.naturalWidth * scale, h = img.naturalHeight * scale;
-        c2d.clearRect(0, 0, canvas.width, canvas.height);
-        c2d.drawImage(img, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
+        let img = loaded.get(index);
+        if (!img) {
+          let nearest = Infinity;
+          loaded.forEach((candidate, key) => {
+            const distance = Math.abs(index - key);
+            if (distance < nearest) { nearest = distance; img = candidate; }
+          });
+        }
+        if (!img || !img.naturalWidth || (!changed && img === drawn && displayWidth === drawnWidth && displayHeight === drawnHeight)) return;
+        const scale = Math.max(displayWidth / img.naturalWidth, displayHeight / img.naturalHeight);
+        const cropWidth = displayWidth / scale, cropHeight = displayHeight / scale;
+        // Same cover crop and 15% vertical anchor, at full backing resolution.
+        // The opaque JPEG covers the surface, so a separate clear is redundant.
+        c2d.drawImage(img, (img.naturalWidth - cropWidth) / 2, Math.max(0, (img.naturalHeight - cropHeight) * 0.15), cropWidth, cropHeight, 0, 0, canvas.width, canvas.height);
         drawn = img;
+        drawnWidth = displayWidth;
+        drawnHeight = displayHeight;
       };
       const schedule = () => { if (!frame && !disposed) frame = requestAnimationFrame(render); };
 
-      // Load order: first, last, then bisect so any scroll position has a near frame early.
-      const queue = [first, last];
-      const ranges: [number, number][] = [[first, last]];
-      for (let i = 0; i < ranges.length; i++) {
-        const [a, b] = ranges[i];
-        if (b - a <= 1) continue;
-        const middle = Math.floor((a + b) / 2);
-        queue.push(middle);
-        ranges.push([a, middle], [middle, b]);
-      }
-      const order = [...new Set(queue)];
-      const pump = () => {
-        const index = order.shift();
-        if (index === undefined || disposed) return;
-        const img = new Image();
-        img.decoding = "async";
-        img.onload = () => { loaded.set(index, img); schedule(); pump(); };
-        img.onerror = pump;
-        img.src = `${base}${String(index).padStart(digits, "0")}.${filetype}`;
-      };
-      for (let i = 0; i < 4; i++) pump();
+      onFrame = schedule;
 
       const st = ScrollTrigger.create({
         trigger: wrap, start: "top top", end: "bottom top",
-        onUpdate(self) { progress = self.progress; schedule(); },
+        // The size tween below changes on the same scroll range. Its resize
+        // observer paints after layout, once, with the current size and frame.
+        onUpdate(self) { progress = self.progress; },
         onRefresh(self) { progress = self.progress; schedule(); },
       });
       progress = st.progress;
-      const observer = new ResizeObserver(schedule);
+      const observer = new ResizeObserver(entries => {
+        // Read delivered layout measurements, rather than forcing a layout
+        // after GSAP changes the element's dimensions on each scroll frame.
+        width = Math.round(entries[0].contentRect.width);
+        height = Math.round(entries[0].contentRect.height);
+        cancelAnimationFrame(frame);
+        render();
+      });
       observer.observe(element);
+      addEventListener("resize", () => { bufferDirty = true; schedule(); }, { passive: true, signal });
       schedule();
       cleanups.push(() => { disposed = true; observer.disconnect(); cancelAnimationFrame(frame); });
 
