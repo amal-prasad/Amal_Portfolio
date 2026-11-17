@@ -1,0 +1,92 @@
+[
+  {
+    "scenario": "desktop",
+    "readyMs": 4712,
+    "startupBytes": 4173298,
+    "startupJsBytes": 385859,
+    "startupMediaRequests": 6,
+    "startupFrameRequests": 49,
+    "longTasks": 1,
+    "blockingMs": 12,
+    "layoutShift": 0.015730790084608627,
+    "paints": [
+      {
+        "name": "first-paint",
+        "startTime": 112
+      },
+      {
+        "name": "first-contentful-paint",
+        "startTime": 112
+      }
+    ],
+    "scroll": {
+      "frames": 64,
+      "p95FrameMs": 50,
+      "framesOver34ms": 18,
+      "layouts": 134,
+      "layoutMs": 19,
+      "scriptMs": 44
+    },
+    "errors": []
+  },
+  {
+    "scenario": "mobile",
+    "readyMs": 4250,
+    "startupBytes": 4173298,
+    "startupJsBytes": 385859,
+    "startupMediaRequests": 6,
+    "startupFrameRequests": 49,
+    "longTasks": 1,
+    "blockingMs": 18,
+    "layoutShift": 0.008648789545789444,
+    "paints": [
+      {
+        "name": "first-paint",
+        "startTime": 108
+      },
+      {
+        "name": "first-contentful-paint",
+        "startTime": 108
+      }
+    ],
+    "scroll": {
+      "frames": 145,
+      "p95FrameMs": 16.8,
+      "framesOver34ms": 0,
+      "layouts": 294,
+      "layoutMs": 30,
+      "scriptMs": 68
+    },
+    "errors": []
+  },
+  {
+    "scenario": "mobile-throttled",
+    "readyMs": 13444,
+    "startupBytes": 1855878,
+    "startupJsBytes": 385859,
+    "startupMediaRequests": 6,
+    "startupFrameRequests": 49,
+    "longTasks": 7,
+    "blockingMs": 1529,
+    "layoutShift": 0.014737287601489592,
+    "paints": [
+      {
+        "name": "first-paint",
+        "startTime": 792
+      },
+      {
+        "name": "first-contentful-paint",
+        "startTime": 792
+      }
+    ],
+    "scroll": {
+      "frames": 47,
+      "p95FrameMs": 83.3,
+      "framesOver34ms": 29,
+      "layouts": 110,
+      "layoutMs": 92,
+      "scriptMs": 251
+    },
+    "errors": []
+  }
+]

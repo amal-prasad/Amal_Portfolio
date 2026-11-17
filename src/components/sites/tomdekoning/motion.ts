@@ -2,7 +2,6 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
 import Lenis from "lenis";
-import { initGlassCarousel } from "./glassCarousel";
 
 type Cleanup = (() => void) | void;
 
@@ -23,6 +22,7 @@ export function initMotion(root: HTMLElement): () => void {
 
   let refreshTimer = 0;
   const scheduleRefresh = () => {
+    if (signal.aborted) return;
     clearTimeout(refreshTimer);
     refreshTimer = window.setTimeout(() => ScrollTrigger.refresh(), 100);
   };
@@ -30,7 +30,8 @@ export function initMotion(root: HTMLElement): () => void {
   /* Hero frames are fetched up front and decoded; the loader waits on them. */
   const seqEl = $(".image-sequence__element");
   const seqData: DOMStringMap = $("[data-sequence-canvas]")?.dataset ?? ({} as DOMStringMap);
-  const seqFrames = Math.floor(num(seqData.frames, 0, 0)), seqFirst = Math.floor(num(seqData.indexStart, 0, 0));
+  const seqFrames = Math.min(reduce ? 1 : Infinity, Math.floor(num(seqData.frames, 0, 0)));
+  const seqFirst = Math.floor(num(seqData.indexStart, 0, 0));
   const seqDigits = Math.floor(num(seqData.digits, 3, 1));
   const frameCache = new Map<number, HTMLImageElement>();
   let framesSettled = 0;
@@ -77,6 +78,7 @@ export function initMotion(root: HTMLElement): () => void {
     initMenu();
     if (reduce) {
       gsap.set($$(".line"), { width: "100%" });
+      initSequence();
       return;
     }
 
@@ -122,7 +124,7 @@ export function initMotion(root: HTMLElement): () => void {
     let fontsDone = !document.fonts;
     document.fonts?.ready.then(() => { fontsDone = true; });
     const started = performance.now(), minDuration = reduce ? 0 : 1600, maxWait = 10000;
-    let shown = 0;
+    let shown = 0, lastCount = -1;
 
     const finish = () => {
       loading = false;
@@ -151,7 +153,8 @@ export function initMotion(root: HTMLElement): () => void {
       shown += (target - shown) * 0.12;
       if (target >= 1 && shown > 0.995) shown = 1;
       loader.style.setProperty("--p", shown.toFixed(4));
-      if (countEl) countEl.textContent = String(Math.floor(shown * 100));
+      const count = Math.floor(shown * 100);
+      if (countEl && count !== lastCount) { countEl.textContent = String(count); lastCount = count; }
       if (shown < 1) return;
       gsap.ticker.remove(tick);
       exit();
@@ -160,17 +163,13 @@ export function initMotion(root: HTMLElement): () => void {
     cleanups.push(() => { gsap.ticker.remove(tick); html.classList.remove("is-loading"); });
   }
 
-  /* Plays as the loader lifts: hero frame wipes in, text staggers, then work reels start fetching */
+  /* Plays as the loader lifts: hero frame wipes in and text staggers. */
   function intro() {
     if (!reduce) {
       gsap.to(seqEl, { clipPath: "inset(0% 0% 0% 0%)", duration: 1.6, ease: "expo.inOut", onComplete: scheduleRefresh });
       initSplitText();
       initReveals();
     }
-    $$<HTMLVideoElement>("[data-glass-carousel-item] video").forEach(video => {
-      video.preload = "auto";
-      video.load();
-    });
   }
 
   /* Menu button */
@@ -226,7 +225,9 @@ export function initMotion(root: HTMLElement): () => void {
     const star = $(".star-icon");
     if (!star) return;
     const setRotation = gsap.quickSetter(star, "rotation", "deg");
-    let rotation = 0, boost = 0, direction = 1;
+    let rotation = 0, boost = 0, direction = 1, visible = true;
+    const observer = new IntersectionObserver(entries => { visible = entries[0].isIntersecting; });
+    observer.observe(star);
     ScrollTrigger.create({
       start: 0, end: "max",
       onUpdate(self) {
@@ -236,14 +237,14 @@ export function initMotion(root: HTMLElement): () => void {
       },
     });
     const tick = (_: number, delta: number) => {
-      if (document.hidden) return;
+      if (document.hidden || !visible) return;
       const dt = Math.min(delta / (1000 / 60), 3);
       boost *= Math.pow(0.92, dt);
       rotation = (rotation + (0.2 * direction + boost) * dt) % 360;
       setRotation(rotation);
     };
     gsap.ticker.add(tick);
-    cleanups.push(() => gsap.ticker.remove(tick));
+    cleanups.push(() => { observer.disconnect(); gsap.ticker.remove(tick); });
   }
 
   /* Marquee that flips direction with scroll direction */
@@ -490,14 +491,6 @@ export function initMotion(root: HTMLElement): () => void {
 
       onFrame = schedule;
 
-      const st = ScrollTrigger.create({
-        trigger: wrap, start: "top top", end: "bottom top",
-        // The size tween below changes on the same scroll range. Its resize
-        // observer paints after layout, once, with the current size and frame.
-        onUpdate(self) { progress = self.progress; },
-        onRefresh(self) { progress = self.progress; schedule(); },
-      });
-      progress = st.progress;
       const observer = new ResizeObserver(entries => {
         // Read delivered layout measurements, rather than forcing a layout
         // after GSAP changes the element's dimensions on each scroll frame.
@@ -510,6 +503,21 @@ export function initMotion(root: HTMLElement): () => void {
       addEventListener("resize", () => { bufferDirty = true; schedule(); }, { passive: true, signal });
       schedule();
       cleanups.push(() => { disposed = true; observer.disconnect(); cancelAnimationFrame(frame); });
+
+      // Reduced motion still displays the original hero, without fetching or
+      // animating the other 48 frames.
+      if (reduce) return;
+      // Frames finish at 60% of the scroll range so the full gesture plays
+      // before the section leaves; lower = faster.
+      const SEQ_SPEED_END = 0.6;
+      const toProgress = (p: number) => Math.min(1, p / SEQ_SPEED_END);
+      const st = ScrollTrigger.create({
+        trigger: wrap, start: "top top", end: "bottom top",
+        // The size observer paints after layout with the current frame/crop.
+        onUpdate(self) { progress = toProgress(self.progress); schedule(); },
+        onRefresh(self) { progress = toProgress(self.progress); schedule(); },
+      });
+      progress = toProgress(st.progress);
 
       const mm = gsap.matchMedia();
       mm.add({ mobile: "(max-width: 767px)", desktop: "(min-width: 768px)" }, context => {
@@ -582,8 +590,8 @@ export function initMotion(root: HTMLElement): () => void {
 
   function initReveals() {
     $$(".line").forEach(line => {
-      gsap.fromTo(line, { width: "0%" }, {
-        width: "100%", duration: 1.6, ease: "expo.inOut",
+      gsap.fromTo(line, { scaleX: 0, transformOrigin: "left center" }, {
+        scaleX: 1, duration: 1.6, ease: "expo.inOut",
         scrollTrigger: { trigger: line, start: "top 95%", toggleActions: "restart none none reset" },
       });
     });
@@ -596,10 +604,29 @@ export function initMotion(root: HTMLElement): () => void {
   }
 
   if (!reduce) {
-    initGlassCarousel(root, signal, scheduleRefresh).then(cleanup => {
-      if (signal.aborted) cleanup?.();
-      else cleanups.push(cleanup);
-    });
+    const work = $("[data-glass-carousel]");
+    if (work) {
+      // Give the existing effects a full viewport of preparation time, without
+      // competing with hero frames/fonts or compiling WebGL during startup.
+      const observer = new IntersectionObserver(entries => {
+        if (!entries.some(entry => entry.isIntersecting)) return;
+        observer.disconnect();
+        if (signal.aborted) return;
+        work.querySelectorAll<HTMLVideoElement>("video").forEach(video => {
+          video.preload = "auto";
+          video.load();
+        });
+        import("./glassCarousel")
+          .then(module => signal.aborted ? undefined : module.initGlassCarousel(root, signal, scheduleRefresh))
+          .then(cleanup => {
+            if (signal.aborted) cleanup?.();
+            else cleanups.push(cleanup);
+          })
+          .catch(() => { /* The original poster/video list remains available. */ });
+      }, { rootMargin: `${Math.max(innerHeight, 800)}px 0px` });
+      observer.observe(work);
+      cleanups.push(() => observer.disconnect());
+    }
   }
   document.fonts?.ready.then(scheduleRefresh);
   scheduleRefresh();

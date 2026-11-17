@@ -47,6 +47,8 @@ next-env.d.ts
 
 # Local temp files
 temp/
+test-results/
+playwright-report/
 
 # Local capture tools and original media (web assets live in public/sites/)
 .playwright-mcp/

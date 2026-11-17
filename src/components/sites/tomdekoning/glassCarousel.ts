@@ -95,6 +95,8 @@ export async function initGlassCarousel(root: HTMLElement, cancelled: AbortSigna
 
   const sources = items.map(item => ({
     tex: null as Three.VideoTexture | null,
+    poster: null as Three.Texture | null,
+    posterReady: false,
     aspect: 16 / 9,
     video: item.querySelector<HTMLVideoElement>("video"),
     playing: false,
@@ -137,9 +139,19 @@ export async function initGlassCarousel(root: HTMLElement, cancelled: AbortSigna
   let velocity = 0, prevScroll = scroll, scrollEnergy = 0;
   let lastInput = performance.now(), snapped = false, lastCenter = -1;
 
+  const textureLoader = new THREE.TextureLoader();
   sources.forEach(source => {
     const video = source.video;
     if (!video) return;
+    // Keep the same artwork visible while a slow connection buffers the video.
+    // The shader, resolution, and video texture take over unchanged.
+    if (video.poster) {
+      source.poster = textureLoader.load(video.poster, texture => {
+        if (disposed) { texture.dispose(); return; }
+        texture.colorSpace = THREE.SRGBColorSpace;
+        source.posterReady = true;
+      }, undefined, () => { /* Keep the DOM poster fallback on failure. */ });
+    }
     const adopt = () => {
       if (disposed || source.tex || !video.videoWidth || video.readyState < 2) return;
       source.aspect = video.videoWidth / video.videoHeight;
@@ -212,11 +224,12 @@ export async function initGlassCarousel(root: HTMLElement, cancelled: AbortSigna
       if (x < -half - buffer || x > half + buffer) { p.mesh.visible = false; return; }
 
       const shrink = 1 - 0.25 * scrollEnergy, h = panelH * shrink, w = src.aspect * panelH * shrink;
-      if (src.tex && p.boundTex !== src.tex) {
-        p.mat.map = src.tex;
+      const texture = src.tex ?? (src.posterReady ? src.poster : null);
+      if (texture && p.boundTex !== texture) {
+        p.mat.map = texture;
         p.mat.color.set(0xffffff);
         p.mat.needsUpdate = true;
-        p.boundTex = src.tex;
+        p.boundTex = texture;
       }
       p.mesh.visible = true;
       p.mesh.position.set(x, 0, 0);
@@ -388,6 +401,10 @@ export async function initGlassCarousel(root: HTMLElement, cancelled: AbortSigna
     renderer.render(scene, camera);
     renderer.setRenderTarget(null);
     renderer.render(lensScene, lensCam);
+    if (wrapper.dataset.glassCarousel !== "canvas" && panelRects.every(rect => {
+      const source = sources[rect.srcIndex];
+      return source.tex || source.posterReady;
+    })) wrapper.setAttribute("data-glass-carousel", "canvas");
     raf = requestAnimationFrame(tick);
   };
 
@@ -419,7 +436,6 @@ export async function initGlassCarousel(root: HTMLElement, cancelled: AbortSigna
   });
   resizeObserver.observe(mount);
 
-  wrapper.setAttribute("data-glass-carousel", "canvas");
   showActive(0);
   lastCenter = 0;
   applyLook();
@@ -441,7 +457,7 @@ export async function initGlassCarousel(root: HTMLElement, cancelled: AbortSigna
     resizeObserver.disconnect();
     entranceTrigger.kill();
     if (captionEl) gsap.killTweensOf(captionEl);
-    sources.forEach(source => { source.tex?.dispose(); source.video?.pause(); });
+    sources.forEach(source => { source.tex?.dispose(); source.poster?.dispose(); source.video?.pause(); });
     pool.forEach(p => p.mat.dispose());
     panelGeometry.dispose();
     lensQuad.geometry.dispose();

@@ -190,7 +190,8 @@ body {
 /* Work */
 .tdk .heading-extreme { text-align: center; font-size: 32vw; }
 .glass-carousel { justify-content: center; align-items: center; min-height: 100svh; display: flex; position: relative; overflow: clip; }
-.glass-carousel__canvas { touch-action: pan-y; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; width: 100%; height: 100%; display: block; position: absolute; inset: 0%; }
+.glass-carousel__canvas { visibility: hidden; pointer-events: none; touch-action: pan-y; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; width: 100%; height: 100%; display: block; position: absolute; inset: 0%; }
+[data-glass-carousel="canvas"] .glass-carousel__canvas { visibility: visible; pointer-events: auto; }
 [data-glass-carousel-pointer="grab"] canvas { cursor: grab; }
 [data-glass-carousel-pointer="grabbing"] canvas { cursor: grabbing; }
 .glass-carousel__collection { z-index: -1; }
